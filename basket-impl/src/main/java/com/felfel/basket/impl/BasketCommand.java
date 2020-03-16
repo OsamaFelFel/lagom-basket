@@ -1,13 +1,43 @@
 package com.felfel.basket.impl;
 
+import akka.actor.typed.ActorRef;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.felfel.basket.api.BasketItem;
+import com.google.common.base.Preconditions;
 import com.lightbend.lagom.serialization.Jsonable;
+import lombok.Value;
+import org.pcollections.PVector;
+
+import java.math.BigDecimal;
 
 public interface BasketCommand extends Jsonable {
 
-    final class GetBasket implements BasketCommand {
+    @Value
+    class GetBasket implements BasketCommand {
+        ActorRef<Basket> replyTo;
+
+        @JsonCreator
+        GetBasket(ActorRef<Basket> replyTo) {
+            this.replyTo = replyTo;
+        }
     }
 
-    final class AddItem implements BasketCommand {
+    @Value
+    @JsonDeserialize
+    class AddItem implements BasketCommand {
+        String itemUuid;
+        Integer quantity;
+        BigDecimal price;
+        ActorRef<Confirmation> replyTo;
+
+        @JsonCreator
+        AddItem(String itemUuid, Integer quantity, BigDecimal price, ActorRef<Confirmation> replyTo) {
+            this.itemUuid = Preconditions.checkNotNull(itemUuid, "itemUuid");
+            this.quantity = quantity;
+            this.price = price;
+            this.replyTo = replyTo;
+        }
     }
 
     interface Reply extends Jsonable {
@@ -16,9 +46,44 @@ public interface BasketCommand extends Jsonable {
     interface Confirmation extends Reply {
     }
 
-    final class Accepted implements Confirmation {
+    @Value
+    @JsonDeserialize
+    class Basket implements Reply {
+        String userUuid;
+        PVector<BasketItem> items;
+        BigDecimal subTotal;
+        BigDecimal tax;
+        BigDecimal total;
+
+        @JsonCreator
+        Basket(String userUuid, PVector<BasketItem> items, BigDecimal subTotal, BigDecimal tax, BigDecimal total) {
+            this.userUuid = userUuid;
+            this.items = items;
+            this.subTotal = subTotal;
+            this.tax = tax;
+            this.total = total;
+        }
     }
 
-    final class Rejected implements Confirmation {
+    @Value
+    @JsonDeserialize
+    class Accepted implements Confirmation {
+        Basket basket;
+
+        @JsonCreator
+        Accepted(Basket basket) {
+            this.basket = basket;
+        }
+    }
+
+    @Value
+    @JsonDeserialize
+    class Rejected implements Confirmation {
+        String reason;
+
+        @JsonCreator
+        Rejected(String reason) {
+            this.reason = reason;
+        }
     }
 }
