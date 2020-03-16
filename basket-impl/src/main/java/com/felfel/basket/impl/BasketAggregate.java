@@ -74,7 +74,7 @@ public class BasketAggregate extends EventSourcedBehaviorWithEnforcedReplies<Bas
             return Effect().reply(command.getReplyTo(), new BasketCommand.Rejected("Quantity should be at least one"));
         }
 
-        if (command.getPrice().compareTo(BigDecimal.ZERO) != 1) {
+        if (command.getPrice().compareTo(BigDecimal.ZERO) < 1) {
             return Effect().reply(command.getReplyTo(), new BasketCommand.Rejected("Price should be grater than zero"));
         }
 
